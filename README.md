@@ -34,6 +34,7 @@ The workflow can also be run manually from the repository's Actions tab.
 - Export a gradient preview as an SVG file
 - Extract a color palette from a local image with Node Vibrant
 - Light and dark themes, with the preference saved in the browser
+- Branded SVG favicon, search metadata, and social-sharing metadata
 
 Share links store the current gradient settings in the URL, so they can be
 reopened without an account or a backend.

@@ -21,7 +21,7 @@ Open the local URL printed by Angular CLI. Create a production build with
 ## Deploy to GitHub Pages
 
 Pushing to the `master` branch builds and deploys the app to
-[https://abhayvishnoi.github.io/backgroundgenerator/](https://abhayvishnoi.github.io/backgroundgenerator/).
+[https://abhayvishnoi.github.io/gradient-studio/](https://abhayvishnoi.github.io/gradient-studio/).
 The workflow can also be run manually from the repository's Actions tab.
 
 ## Features

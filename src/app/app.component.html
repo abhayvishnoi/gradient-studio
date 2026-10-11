@@ -1,0 +1,162 @@
+<main class="studio-shell">
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Gradient Studio home">
+      <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+      <span>gradient<span class="brand-light">studio</span></span>
+    </a>
+    <div class="topbar-actions">
+      <span class="saved-label"><span class="status-dot"></span> Your colors, your canvas</span>
+      <button class="icon-button theme-button" type="button" (click)="toggleTheme()" [attr.aria-label]="theme() === 'light' ? 'Switch to dark mode' : 'Switch to light mode'" [title]="theme() === 'light' ? 'Switch to dark mode' : 'Switch to light mode'">
+        <span aria-hidden="true">{{ theme() === 'light' ? '☾' : '☀' }}</span>
+      </button>
+      <button class="icon-button" type="button" (click)="toggleFavorite()" [attr.aria-label]="isFavorite() ? 'Remove favorite' : 'Save favorite'">
+        <span aria-hidden="true">{{ isFavorite() ? '♥' : '♡' }}</span>
+      </button>
+      <button class="button button-dark button-small" type="button" (click)="share()">
+        <span aria-hidden="true">↗</span> Share
+      </button>
+    </div>
+  </header>
+
+  <section class="workspace">
+    <div class="editor-panel">
+      <div class="eyebrow"><span class="eyebrow-line"></span> COLOR PLAYGROUND</div>
+      <h1>Make color<br><span>move.</span></h1>
+
+      <section class="control-section image-palette-section">
+        <div class="section-heading">
+          <div>
+            <h2>Create a palette from your photo</h2>
+            <p class="image-description">Discover the colors in any image, then turn them into a gradient.</p>
+          </div>
+          <span class="image-icon" aria-hidden="true">✳</span>
+        </div>
+        <input #imageFileInput class="visually-hidden" type="file" accept="image/*" aria-label="Choose an image to extract colors" (change)="extractPaletteFromImage($event)">
+        <button class="upload-button" type="button" [disabled]="extractingImage()" (click)="imageFileInput.click()">
+          <span aria-hidden="true">{{ extractingImage() ? '◌' : '↑' }}</span>
+          {{ extractingImage() ? 'Building your palette…' : imagePreview() ? 'Choose another photo' : 'Choose a photo' }}
+        </button>
+        <p class="image-hint">JPG, PNG, GIF or WebP · Up to 10 MB · Your photo stays on your device.</p>
+        @if (imagePreview()) {
+          <div class="image-result">
+            <img class="image-preview" [src]="imagePreview()" [alt]="'Selected image: ' + imageName()">
+            <div class="image-result-content" aria-live="polite">
+              <p class="image-name">{{ imageName() }}</p>
+              @if (extractingImage()) {
+                <p class="image-status">Finding the colors that make this photo yours…</p>
+              } @else if (imagePalette().length > 0) {
+                <div class="extracted-palette" aria-label="Colors found in your image">
+                  @for (color of imagePalette(); track color) {
+                    <span class="extracted-color" [style.--extracted-color]="color" [attr.aria-label]="color"></span>
+                  }
+                </div>
+                <button class="use-palette-button" type="button" (click)="applyImagePalette()">Build my gradient</button>
+              }
+            </div>
+          </div>
+        }
+      </section>
+
+      <section class="control-section">
+        <div class="section-heading">
+          <h2>Color stops <span class="count-badge">{{ stops().length }}</span></h2>
+          <button class="text-button" type="button" (click)="randomize()"><span aria-hidden="true">⤨</span> Surprise me</button>
+        </div>
+        <div class="stop-list">
+          @for (stop of stops(); track trackStop($index, stop); let i = $index) {
+            <div class="stop-row">
+              <span class="stop-index">{{ (i + 1).toString().padStart(2, '0') }}</span>
+              <label class="color-swatch" [style.--swatch]="stop.color" [attr.aria-label]="'Choose color ' + (i + 1)">
+                <input type="color" [value]="stop.color" (input)="setColor(stop.id, $event)" [attr.aria-label]="'Color stop ' + (i + 1)">
+              </label>
+              <input class="hex-input" type="text" [value]="stop.color" maxlength="7" spellcheck="false" (change)="setHexColor(stop.id, $event)" [attr.aria-label]="'Hex value for color stop ' + (i + 1)">
+              @if (stops().length > 2) {
+                <button class="remove-stop" type="button" (click)="removeStop(stop.id)" [attr.aria-label]="'Remove color ' + (i + 1)">×</button>
+              }
+            </div>
+          }
+        </div>
+        <button class="add-stop" type="button" (click)="addStop()" [disabled]="stops().length >= 5">
+          <span class="plus">+</span> Add color stop <span class="add-limit">{{ stops().length }}/5</span>
+        </button>
+      </section>
+
+      @if (favorites().length > 0) {
+        <section class="control-section favorites-section">
+          <div class="section-heading"><h2>Your favorites <span class="count-badge">{{ favorites().length }}</span></h2></div>
+          <div class="favorite-list">
+            @for (favorite of favorites(); track $index) {
+              <button class="favorite-chip" type="button" [style.--favorite-gradient]="'linear-gradient(120deg, ' + favorite.colors.join(', ') + ')'" (click)="applyPreset(favorite)" [attr.aria-label]="'Load saved gradient ' + favorite.colors.join(', ')"></button>
+            }
+          </div>
+        </section>
+      }
+      <div class="editor-footer"><span>✳</span> Made for the colors you imagine.</div>
+    </div>
+
+    <div class="preview-column">
+      <div class="preview-toolbar">
+        <div class="preview-title"><span class="live-indicator"></span> LIVE PREVIEW</div>
+        <button class="text-button reset-button" type="button" (click)="reset()">↺ Reset</button>
+      </div>
+      <div class="preview-card" [style.background]="cssValue()" aria-label="Live gradient preview">
+        <div class="preview-orbit orbit-one"></div><div class="preview-orbit orbit-two"></div>
+        <div class="preview-copy">
+          <span class="preview-kicker">A FRESH PERSPECTIVE</span>
+          <p>Color outside<br>the lines<span class="period">.</span></p>
+          <span class="preview-caption">BUILT ONE SHADE AT A TIME</span>
+        </div>
+        <div class="preview-stamp"><span>✳</span><small>MADE<br>BY YOU</small></div>
+      </div>
+      <section class="control-section style-section">
+        <div class="section-heading"><h2>Gradient style</h2></div>
+        <div class="segmented-control" role="group" aria-label="Gradient style">
+          <button type="button" [class.active]="gradientType() === 'linear'" (click)="setType('linear')"><span aria-hidden="true">↗</span> Linear</button>
+          <button type="button" [class.active]="gradientType() === 'radial'" (click)="setType('radial')"><span aria-hidden="true">◉</span> Radial</button>
+        </div>
+        @if (gradientType() === 'linear') {
+          <div class="angle-control">
+            <div class="angle-label"><span>Direction</span><span class="angle-value">{{ angle() }}°</span></div>
+            <input type="range" min="0" max="360" [value]="angle()" (input)="setAngle($event)" aria-label="Gradient direction">
+            <div class="range-labels"><span>0°</span><span>180°</span><span>360°</span></div>
+          </div>
+        }
+      </section>
+      <div class="code-card">
+        <div class="code-head"><div><span class="code-dot"></span><span class="code-label">YOUR CSS</span></div><span class="code-type">CSS</span></div>
+        <code><span class="code-property">background:</span> {{ cssValue() }};</code>
+        <button class="copy-button" type="button" (click)="copyCss()"><span aria-hidden="true">▣</span> Copy</button>
+      </div>
+      <div class="export-row">
+        <span>Ready to take it with you?</span>
+        <div class="export-actions">
+          <button class="export-button" type="button" (click)="downloadSvg()">↓ Export SVG</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="presets-section">
+    <div class="presets-heading">
+      <div><div class="eyebrow"><span class="eyebrow-line"></span> A LITTLE INSPIRATION</div><h2>Start with a feeling.</h2></div>
+      <span class="preset-count">12 HAND-PICKED PALETTES</span>
+    </div>
+    <div class="preset-grid">
+      @for (preset of presets; track preset.name) {
+        <button class="preset-card" type="button" (click)="applyPreset(preset)" [attr.aria-label]="'Apply ' + preset.name + ' gradient'">
+          <span class="preset-swatch" [style.background]="'linear-gradient(135deg, ' + preset.colors.join(', ') + ')'">
+            <span class="preset-use">Use palette <span aria-hidden="true">↗</span></span>
+          </span>
+          <span class="preset-meta"><span>{{ preset.name }}</span><span class="preset-colors">{{ preset.colors.length }} colors</span></span>
+        </button>
+      }
+    </div>
+  </section>
+
+  <footer class="page-footer">
+    <span>GRADIENT STUDIO</span>
+    <span>Made with <span class="footer-heart" role="img" aria-label="love">❤️</span> by <a href="https://abhayvishnoi.in" target="_blank" rel="noopener noreferrer">AV</a></span>
+    <button type="button" (click)="reset()">Back to top ↑</button>
+  </footer>
+  @if (notice()) { <div class="toast" role="status">{{ notice() }}</div> }
+</main>
